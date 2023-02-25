@@ -100,7 +100,16 @@ const chessReducer = createReducer(initCheseState, (builder) => {
       ofType(ruch.type),
       pluck('payload'),
       switchMap((payload: IRuchRequest)=> 
-        from(chessApi.ruchUsingGET(payload.endX, payload.endY, payload.startX, payload.startY)).pipe(
+        from(chessApi.ruchUsingPOST( 
+          { start : { 
+            pozycjaX: payload.startX, 
+            pozycjaY:payload.startY
+          }, 
+          koniec: {
+            pozycjaX: payload.endX,
+            pozycjaY: payload.endY
+          }
+        } )).pipe(
           switchMap((response) => of(
             response.data 
             ? pobierzPlansze()

@@ -6,6 +6,7 @@ import './App.css';
 import store,{ AppState, dostepneRuchySelector, IRuchRequest, mozliweRuchy, planszaSelector, pobierzPlansze, ruch, sprawdzanyPionekSelector, useTypedSelector } from './redux.config'
 import { FormApi } from 'final-form';
 import { useSelector, useStore } from 'react-redux';
+import { PionekDtoFiguraEnum } from './model/api';
 
 function App() {
 
@@ -128,24 +129,55 @@ const DostepneRuchyComp: React.FC = () => {
           }
         }
         console.log("PLANSZA:" + plansza);
+        
         plansza?.map(pionek => {
           if(!!ctx) {
             ctx.beginPath();
           const x=pionek.pozycjaX;
           const y=pionek.pozyjcjaY;
           if (x !== undefined && y !== undefined) {
-            ctx.arc(x*50+25, 400-y*50-25, 20, 0, 2 * Math.PI); 
-            ctx.fillStyle = pionek.kolor === 'BIALY' ? "white" : "black"
-            ctx.fill();
-            ctx.strokeStyle = 'blue';
-            ctx.lineWidth = 3;
-            ctx.stroke(); 
+          
+            var img = new Image();
+
+            switch(pionek.figura) {
+              case PionekDtoFiguraEnum.Pionek: 
+                img.src = pionek.kolor === 'BIALY' ? "images/pion_b.png" : "images/pion_c.png";
+                break;
+              case PionekDtoFiguraEnum.Wieza: 
+                img.src = pionek.kolor === 'BIALY' ? "images/wieza_b.png" : "images/wieza_c.png";
+                break;
+              case PionekDtoFiguraEnum.Kon: 
+                img.src = pionek.kolor === 'BIALY' ? "images/kon_b.png" : "images/kon_c.png";
+                break;
+              case PionekDtoFiguraEnum.Laufer: 
+                img.src = pionek.kolor === 'BIALY' ? "images/laufer_b.png" : "images/laufer_c.png";
+                break;
+              case PionekDtoFiguraEnum.Krol: 
+                img.src = pionek.kolor === 'BIALY' ? "images/krol_b.png" : "images/krol_c.png";
+                break;
+              case PionekDtoFiguraEnum.Krolowa: 
+                img.src = pionek.kolor === 'BIALY' ? "images/krolowa_b.png" : "images/krolowa_c.png";
+                break;
+            }
+            
+
+            img.onload = function() { if(ctx) ctx.drawImage(img, x*50 ,350-y*50, 50, 50); }
+
+            // ctx.arc(x*50+25, 400-y*50-25, 20, 0, 2 * Math.PI); 
+            // ctx.fillStyle = pionek.kolor === 'BIALY' ? "white" : "black"
+            // ctx.fill();
+            // ctx.strokeStyle = 'blue';
+            // ctx.lineWidth = 3;
+            // ctx.stroke(); 
+
           }
           
 
           }
         })
 
+        
+        ctx.lineWidth = 3;
         if(sprawdzanyPionek) {
           ctx.beginPath();
           const x1=sprawdzanyPionek.startX;
