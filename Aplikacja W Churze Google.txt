@@ -1,0 +1,70 @@
+ Instalacja dockera
+
+Uruchomienie Dockera na zwykłym użytkowniku - net localgroup docker-users "Renatka" /ADD - https://stackoverflow.com/questions/61530874/docker-how-do-i-add-myself-to-the-docker-users-group-on-windows-10-home
+
+Instalacja Linux Kernel - https://learn.microsoft.com/pl-pl/windows/wsl/install-manual#step-4---download-the-linux-kernel-update-package
+
+
+Włączenie wirtualizacji W BIOS - włączamy bios - przy wlaczenieniu caly czas wciskamy FN + F2 - przechodzimy do konfiguration i przestawiamy "amd svn support" na enabled
+
+----------Jak dalej docker nie działa uruchamiamy Hyper-V ----
+
+Instalacja Hyper V - https://www.makeuseof.com/windows-feature-name-microsoft-hyper-v-unknown-error/ (punkt 2) instalacja skryptu dokładnie opisana w - https://www.makeuseof.com/install-hyper-v-windows-11-home/
+
+Wlaczenie hyperV:
+  - dism.exe /Online /Enable-Feature:Microsoft-Hyper-V /All
+  - bcdedit /set hypervisorlaunchtype auto
+https://stackoverflow.com/questions/39684974/docker-for-windows-error-hardware-assisted-virtualization-and-data-execution-p
+
+----------------------------------------------------------------------------------
+
+Zbudowanie obrazu:
+
+Uruchom docker desktop!
+
+W katalogu aplikacji uruchamiamy:
+mvn compile com.google.cloud.tools:jib-maven-plugin:2.3.0:dockerBuild -https://medium.com/swlh/build-a-docker-image-using-maven-and-spring-boot-58147045a400
+
+Sprawdzenie listy obrazów: 
+docker images 
+
+Zalogowanie na dockeh hub (wczesniej trzeba utworzyć konto na https://hub.docker.com/)
+winpty docker login
+
+Tagowanie obrazu:
+docker tag szachy:1.0-SNAPSHOT renatad/szachy
+
+Wrzucenie obrazu do docker hub:
+docker push renatad/szachy
+
+
+-----------------------------------------------------------------------------
+Front:
+
+Zmiana aby aplikacja laczyla sie z BE na chmurze:
+redux.config.ts -> zamiast localhost dajemuy adres chmury -> http://34.147.7.225
+
+Zbudowanie aplikacji (budowanie na dockerze nie zadzialalo, trzeba zbudować lokalnie):
+cd ~/Idea/FrontSzachy/szachy
+npm run build
+
+Uruchom docker desktop!
+
+Zbudowanie obrazu:
+docker image build -t szachyfront .
+
+sprawdzenie obrazu:
+docker run -p 80:80 szachyfront  -> odpalenie lokalhost
+
+Zalogowanie na dockeh hub (wczesniej trzeba utworzyć konto na https://hub.docker.com/)
+winpty docker login
+
+Tagowanie obrazu:
+docker tag szachyfront  renatad/szachyfront
+
+Wrzucenie obrazu do docker hub:
+docker push renatad/szachyfront
+
+
+
+

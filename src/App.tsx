@@ -3,12 +3,14 @@ import logo from './logo.svg';
 import { Field, Form } from 'react-final-form'
 import { OnChange } from 'react-final-form-listeners'
 import './App.css';
-import store,{ AppState, dostepneRuchySelector, IRuchRequest, mozliweRuchy, planszaSelector, pobierzPlansze, ruch, sprawdzanyPionekSelector, useTypedSelector } from './redux.config'
+import store,{ AppState, dostepneRuchySelector, IRuchRequest, mozliweRuchy, planszaSelector, pobierzPlansze, przelaczPrzeciwnika, ruch, sprawdzanyPionekSelector, useTypedSelector, wirtualnyPrzeciwnikSelector, wykonywanyRuchSelector, zacznijOdPoczatku, zerujMozliweRuchy } from './redux.config'
 import { FormApi } from 'final-form';
 import { useSelector, useStore } from 'react-redux';
 import { PionekDtoFiguraEnum } from './model/api';
 
 function App() {
+
+  const wirtualnyPrzeciwnikWlaczony = useTypedSelector(wirtualnyPrzeciwnikSelector)
 
 const submit = (values: IRuchRequest) => {
   store.dispatch(ruch({
@@ -20,7 +22,7 @@ const submit = (values: IRuchRequest) => {
 } 
 
 const pokazMozliweRuchy = (x: number | undefined, y: number | undefined) : void => {
-  if (x && y) {
+  if (x !== undefined && y !== undefined) {
     store.dispatch(mozliweRuchy({startX: x, startY: y}))
   }
 
@@ -39,10 +41,14 @@ const pokazMozliweRuchy = (x: number | undefined, y: number | undefined) : void 
           ? store.getState().dostepneRuchy!.map(ruch =>ruch.pozycjaX) 
           : 'Brak dostepnych ruchow'} />; */}
 
-      <DostepneRuchyComp/>
-
+    
       <Form onSubmit={submit} render={({ handleSubmit, form }) => (
         <form onSubmit={handleSubmit}>
+
+          <DostepneRuchyComp form={form}/>
+
+          <br/>
+          <div style={{display: 'none' }}>
           <Field 
             name='startX'
             component="input"
@@ -81,7 +87,19 @@ const pokazMozliweRuchy = (x: number | undefined, y: number | undefined) : void 
           <br/>
           <button type="submit">
               Wykonaj ruch
-            </button>
+          </button>
+          </div>
+          <br/>
+
+          <button type="button" onClick={() => store.dispatch(przelaczPrzeciwnika())}>
+            {wirtualnyPrzeciwnikWlaczony ?  'wylacz wirtualnego przeciwnika' : 'wlacz wirtualnego przeciwnika'}
+          </button>
+
+          <br/>
+
+          <button type="button" onClick={() => store.dispatch(zacznijOdPoczatku())}>
+            Zacznij gre od poczatku
+          </button>
 
         </form>
       )}
@@ -103,11 +121,12 @@ export default App;
 //   //return <h1>Cześć, {props.name}, {store.getState()}</h1> ;
 // }
 
-const DostepneRuchyComp: React.FC = () => {
+const DostepneRuchyComp: React.FC<{form: FormApi<any>}> = ({form}) => {
   //const test2 = useSelector<AppState>(dostepneRuchySelector);
 
   const dostepneRuchy = useTypedSelector(dostepneRuchySelector); 
   const sprawdzanyPionek = useTypedSelector(sprawdzanyPionekSelector); 
+  const ostatniRuch = useTypedSelector(wykonywanyRuchSelector); 
   const plansza = useTypedSelector(planszaSelector); 
 
   useEffect(() => {
@@ -178,6 +197,29 @@ const DostepneRuchyComp: React.FC = () => {
 
         
         ctx.lineWidth = 3;
+
+        if(ostatniRuch && ostatniRuch.startX) {
+          if (ostatniRuch.startX !== undefined && ostatniRuch.startY !== undefined) {
+            ctx.beginPath();
+            const x1=ostatniRuch.startX;
+            const y1=ostatniRuch.startY;
+            ctx.strokeStyle = 'yellow';
+            ctx.rect(x1*50, 350-y1*50, 50, 50);
+            ctx.stroke();
+          }
+
+          if (ostatniRuch.endX !== undefined && ostatniRuch.endY !== undefined) {
+            ctx.beginPath();
+            const x2=ostatniRuch.endX ;
+            const y2=ostatniRuch.endY;
+            ctx.strokeStyle = 'yellow';
+            ctx.rect(x2*50, 350-y2*50, 50, 50);
+            ctx.stroke();
+          }
+
+        }
+        ctx.lineWidth = 3;
+
         if(sprawdzanyPionek) {
           ctx.beginPath();
           const x1=sprawdzanyPionek.startX;
@@ -208,10 +250,42 @@ const DostepneRuchyComp: React.FC = () => {
       }
     }
   }, [dostepneRuchy,sprawdzanyPionek, plansza]);
+
+  const clickHandler = (event: React.MouseEvent) => {
+
+    let canvas = document.getElementById("myCanvas") as HTMLCanvasElement
+
+    const rect = canvas.getBoundingClientRect();
+
+    const positionX = Math.floor((event.clientX - rect.left) / 50)
+    const positionY = 7 - Math.floor((event.clientY - rect.top ) /50);
+
+
+    const currentStartX = form.getFieldState('startX')?.value;
+    const currentStartY = form.getFieldState('startY')?.value;
+
+    if (currentStartX === undefined && currentStartY === undefined) {
+      form.change('startX', positionX);
+      form.change('startY', positionY);
+    } else if(currentStartX === positionX && currentStartY === positionY) {
+      store.dispatch(zerujMozliweRuchy())
+      form.change('startX', undefined);
+      form.change('startY', undefined);
+    } else {
+      form.change('endX', positionX);
+      form.change('endY', positionY);
+      form.submit()
+      form.change('startX', undefined);
+      form.change('startY', undefined);
+      form.change('endX', undefined);
+      form.change('endY', undefined);
+    }
+
+  }
   
   return ( 
   <Fragment>
-    <canvas id="myCanvas" width="400" height="400"></canvas>
+    <canvas id="myCanvas" onClick={clickHandler} width="400" height="400"></canvas>
   </Fragment>
   )
   //return <h1>Dostepne Ruchy </h1>
